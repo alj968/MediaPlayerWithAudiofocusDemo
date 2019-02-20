@@ -4,13 +4,11 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.MediaPlayer;
-import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.media.AudioManager;
-import android.widget.Toast;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -20,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements
     AudioManager mAudioManager;
     AudioFocusRequest mFocusRequest;
     AudioAttributes mPlaybackAttributes;
+    boolean wasPlayingBeforeInterruption;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,11 +45,11 @@ public class MainActivity extends AppCompatActivity implements
                 int result = mAudioManager.requestAudioFocus(mFocusRequest);
 
                 if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                    if (mMediaPlayer != null) {
+                    if (mMediaPlayer == null) {
                         mMediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.bensound_funnysong);
                     }
-
                     mMediaPlayer.start();
+                    wasPlayingBeforeInterruption = true;
                     mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                         @Override
                         public void onCompletion(MediaPlayer mediaPlayer) {
@@ -66,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onClick(View view) {
                 mMediaPlayer.pause();
+                wasPlayingBeforeInterruption = false;
             }
         });
     }
@@ -75,7 +75,9 @@ public class MainActivity extends AppCompatActivity implements
                 focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
             mMediaPlayer.pause();
         } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-            mMediaPlayer.start();
+            if(wasPlayingBeforeInterruption) {
+                mMediaPlayer.start();
+            }
 
         } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
             releaseMediaPlayer();
